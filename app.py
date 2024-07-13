@@ -22,7 +22,7 @@ def show_user_questions():
         return redirect("error_page.html", code=500)
 
     '''Authentication'''
-
+    '''github funziona?'''
     question_collection = mydb["questions"]
     questions = question_collection.find();
     for question in questions:
