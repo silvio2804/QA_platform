@@ -3,7 +3,6 @@ import random
 from flask import Flask, redirect, url_for, render_template, request, session, jsonify
 import pymongo
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
-from pymongo.errors import OperationFailure
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import re
@@ -26,15 +25,20 @@ def show_home():
         return redirect("error_page.html", code=500)
 
     '''Authentication'''
+
     question_collection = mydb["questions"] #riferimento alla collezione
     questions = question_collection.find() #lista di domande
 
     random_questions = random.sample(list(questions), 10) #lista di domande random
 
+    users_collection = mydb["users"]
+    user_session = users_collection.find_one({"username":session["username"]})
+    print(user_session)
+
     if "username" not in session:
         return redirect(url_for("login"))
-    return render_template("questions/index.html")
-    #return render_template("questions/index.html", questions=random_questions)
+    else:
+        return render_template("questions/index.html", questions=random_questions,user=user_session)
 
 #@app.route("/registrazione")
 #def register():
@@ -105,6 +109,8 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["username"] = user["username"]
+            print("session")
+            print(session)
             return redirect(url_for("show_home"))
         else:
             return render_template("auth/login.html", error="Email o password non validi!")
