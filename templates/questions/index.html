@@ -30,13 +30,14 @@
             {% for question in questions %}
             <section class="questions-list">
                 <article class="question">
-                    <h2><a href="#">{{ question.title }}</a></h2>
-                    <p>{{ question.body }}</p>
+                    <h2><a href="#">{{ question.Title }}</a></h2>
+                    <p>{{ question.Body | safe }}</p>
                     <div class="meta-info">
-                        <span>{{question.user_id }}</span>
+                        <span>{{question.OwnerUserId }}</span>
                         <span>3 risposte</span>
-                        <span>5 voti</span>
-                        <button class="favorite-btn">Aggiungi ai Preferiti</button>
+                        <span>Score: {{ question.Score }}</span>
+                        <span>data creazione: {{ question.CreationDate }}</span>
+                        <!--<button class="favorite-btn">Aggiungi ai Preferiti</button> -->
                     </div>
                     <div class="comments-section">
                         <h3>Commenti</h3>
@@ -50,7 +51,6 @@
                     </div>
                 </article>
                 {% endfor %}
-                <!-- Aggiungi più domande qui -->
             </section>
         </div>
     </main>
