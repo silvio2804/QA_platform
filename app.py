@@ -1,10 +1,11 @@
+import random
+
 from flask import Flask, redirect, url_for, render_template, request, session, jsonify
 import pymongo
 from pymongo.errors import ConnectionFailure, DuplicateKeyError
 from pymongo.errors import OperationFailure
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
-import random
 import re
 
 app = Flask(__name__)
@@ -15,19 +16,25 @@ mydb = myclient["qa_platform"]
 
 # Collezioni del database
 users_collection = mydb["users"]
-questions_collection = mydb["Questions2"]
-answers_collection = mydb["Answers2"]
+questions_collection = mydb["questions"]
+answers_collection = mydb["answers"]
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
+@app.route("/",methods=['GET'])
+def show_home():
+    #Test db connection
+    if not connect_to_db():
+        return redirect("error_page.html", code=500)
 
-@app.route("/home")
-def home():
+    '''Authentication'''
+    question_collection = mydb["questions"] #riferimento alla collezione
+    questions = question_collection.find() #lista di domande
+
+    random_questions = random.sample(list(questions), 10) #lista di domande random
+
     if "username" not in session:
         return redirect(url_for("login"))
-    return render_template("questions/home.html")
-    #return render_template("questions/home.html")
+    return render_template("questions/index.html")
+    #return render_template("questions/index.html", questions=random_questions)
 
 #@app.route("/registrazione")
 #def register():
@@ -98,7 +105,7 @@ def login():
 
         if user and check_password_hash(user["password"], password):
             session["username"] = user["username"]
-            return redirect(url_for("home"))
+            return redirect(url_for("show_home"))
         else:
             return render_template("auth/login.html", error="Email o password non validi!")
 
@@ -117,13 +124,27 @@ def show_user_questions():
         return redirect("error_page.html", code=500)
 
     '''Authentication'''
-    '''github funziona?'''
     question_collection = mydb["questions"]
-    questions = question_collection.find();
-    for question in questions:
-        print(question)
+    user_collection = mydb["users"]
 
-    return render_template("questions/home.html", questions=questions)
+
+    user = user_collection.find_one({"id":14008})
+    print("Il nome utente è: ")
+    print(user)
+
+    pipeline = [
+        {
+            '$lookup': {
+                'from': 'users',
+                'localField': 'OwnerUserId',
+                'foreignField': 'id',
+                'as': 'joinedResult'
+            }
+        }
+    ]
+    user_questions = list(question_collection.aggregate(pipeline))
+    '''printare userquestions'''
+    return render_template("questions/my_questions.html", questions=user_questions)
 
 @app.route("/myAnswers",methods=['GET'])
 def show_user_answers():

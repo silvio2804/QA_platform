@@ -1,10 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domande di {{ username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <header>
+        <div class="container">
+            <h1>Q&A Site</h1>
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="#">Le mie domande</a></li>
+                    <li><a href="#">Chiedi una Domanda</a></li>
+                    <li><a href="#">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
 
+    <main>
+        <div class="container">
+            <section class="user-questions">
+                <h2>Domande postate da {{ username }}</h2>
+                <section class="questions-list">
+                    {% for question in questions %}
+                    <article class="question">
+                        <h2><a href="#">{{ question.title }}</a></h2>
+                        <p>{{ question.description | safe }}</p>
+                        <div class="meta-info">
+                            <span>Postato da {{ question.author }}</span>
+                            <span>{{ question.responses }} risposte</span>
+                            <span>{{ question.votes }} voti</span>
+                        </div>
+                        <div class="comments-section">
+                            <h3>Commenti</h3>
+                            {% for comment in question.comments %}
+                            <div class="comment">
+                                <p><strong>{{ comment.author }}:</strong> {{ comment.text | safe }}</p>
+                                <button class="favorite-btn">Aggiungi ai Preferiti</button>
+                            </div>
+                            {% endfor %}
+                            <textarea placeholder="Aggiungi un commento..."></textarea>
+                            <button>Commenta</button>
+                        </div>
+                    </article>
+                    {% endfor %}
+                    {% if not questions %}
+                    <p>Nessuna domanda postata da {{ username }}.</p>
+                    {% endif %}
+                </section>
+            </section>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
