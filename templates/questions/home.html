@@ -27,6 +27,7 @@
             <h1>Q&A Site</h1>
             <nav>
                 <ul>
+<<<<<<< HEAD:templates/questions/index.html
                     <li><a href="{{ url_for('show_home') }}">Home</a></li>
                     <li><a href="{{ url_for('show_user_questions') }}">Domande</a></li>
                     <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
@@ -35,6 +36,12 @@
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
+=======
+                    <li><a href="home.html">Home</a></li>
+                    <li><a href="#">Domande</a></li>
+                    <li><a href="#">Chiedi una Domanda</a></li>
+                    <li><a href="../auth/login.html">Login</a></li>
+>>>>>>> 80076f6 (renamed):templates/questions/home.html
                 </ul>
             </nav>
         </div>
@@ -51,9 +58,10 @@
             <section class="questions-list">
                 {% for question in questions %}
                 <article class="question">
-                    <h2><a href="#">{{ question.Title }}</a></h2>
-                    <p>{{ question.Body | safe }}</p>
+                    <h2><a href="#">{{ question.title }}</a></h2>
+                    <p>{{ question.body }}</p>
                     <div class="meta-info">
+<<<<<<< HEAD:templates/questions/index.html
                         <span>{{ question.OwnerUserId }}</span>
                         <div class="vote-buttons">
                             {% if user %}
@@ -66,6 +74,12 @@
                         </div>
                         <span>3 risposte</span>
                         <span>data creazione: {{ question.CreationDate }}</span>
+=======
+                        <span>{{question.user_id }}</span>
+                        <span>3 risposte</span>
+                        <span>5 voti</span>
+                        <button class="favorite-btn">Aggiungi ai Preferiti</button>
+>>>>>>> 80076f6 (renamed):templates/questions/home.html
                     </div>
                     <div class="comments-section">
                         <h3>Commenti</h3>
@@ -95,6 +109,7 @@
                     </div>
                 </article>
                 {% endfor %}
+                <!-- Aggiungi più domande qui -->
             </section>
         </div>
     </main>
