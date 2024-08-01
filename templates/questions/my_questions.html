@@ -1,10 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q&A Site</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <style>
+        .vote-buttons {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-right: 10px;
+        }
+        .vote-buttons button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 1.5em;
+            line-height: 1;
+        }
+    </style>
 </head>
 <body>
+    <header>
+        <div class="container">
+            <h1>Q&A Site</h1>
+            <nav>
+                <ul>
+                        <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
+                        <li><a href="{{ url_for('show_home') }}">Home</a></li>
+                    {% if user %}
+                        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                        <li>{{user.username}}</li>
+                    {% else %}
+                        <li><a href="{{ url_for('login') }}">Login</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
 
+    <main>
+        <div class="container">
+            <section class="search-bar">
+                <form method="POST" action="{{ url_for('search') }}">
+                    <input type="text" name="query" placeholder="Cerca domande...">
+                    <button type="submit">Cerca</button>
+                </form>
+            </section>
+            <section class="questions-list">
+                {% for question in questions %}
+                <article class="question">
+                    <h2>{{ question.Title }}</h2>
+                    <p>{{ question.Body | safe }}</p>
+                    <div class="meta-info">
+                        <span> Score: {{ question.Score }}</span> <br>
+                        <span>Data creazione: {{ question.CreationDate }}</span>
+
+                        <!-- inserire anche lo score???!-->
+                    </div>
+                </article>
+                {% endfor %}
+            </section>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
+        </div>
+    </footer>
+    <script src="script.js"></script>
 </body>
 </html>

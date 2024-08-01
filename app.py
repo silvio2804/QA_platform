@@ -180,9 +180,9 @@ def logout():
 def show_user_questions():
     '''Visualizza le domande dell'utente.'''
     user_session = users_collection.find_one({"username": session.get("username")})
-    user_questions = questions_collection.find({"OwnerUserId": user_session["username"]})
-
-    return render_template("questions/my_questions.html", questions=user_questions)
+    id = int(user_session["_id"])
+    questions = list(questions_collection.find({"OwnerUserId": id}))
+    return render_template("questions/my_questions.html", user=user_session, questions=questions)
 
 @app.route("/myAnswers", methods=['GET'])
 def show_user_answers():
