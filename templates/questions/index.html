@@ -47,12 +47,18 @@
             <nav>
                 <ul>
                     <li><a href="{{ url_for('show_home') }}">Home</a></li>
-                    <li><a href="{{ url_for('show_user_questions') }}">Domande</a></li>
+                    {% if user %}
+                    <li><a href="{{ url_for('show_user_questions') }}">Le mie domande</a></li>
+                    {% endif %}
                     <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
                     {% if user %}
                         <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
+                    {% endif %}
+
+                    {% if user %}
+                        <li>Benvenuto {{user.username}}</li>
                     {% endif %}
                 </ul>
             </nav>
