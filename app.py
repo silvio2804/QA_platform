@@ -10,37 +10,29 @@ app = Flask(__name__)
 app.secret_key = "your_secret_key"
 
 # Connessione al database MongoDB
-myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-mydb = myclient["qa_platform"]
-
-# Collezioni del database
-users_collection = mydb["users"]
-questions_collection = mydb["questions"]
-answers_collection = mydb["answers"]
-
 def connect_to_db():
-    '''Controlla la connessione al database.'''
     try:
-        myclient = pymongo.MongoClient("mongodb://localhost:27017/")
-        mydb = myclient["qa_platform"]
-        return mydb
+        client = pymongo.MongoClient("mongodb://localhost:27017/")
+        db = client["qa_platform"]
+        return db
     except ConnectionFailure:
         return None
+
+db = connect_to_db()
+if db is None:
+    raise Exception("Database connection failed")
+
+# Collezioni del database
+users_collection = db["users"]
+questions_collection = db["questions"]
+answers_collection = db["answers"]
 
 @app.route("/", methods=['GET'])
 def show_home():
     '''Visualizza la home page con un elenco di domande casuali.'''
-    db = connect_to_db()
-    if db is None:
-        return redirect(url_for("error_page"), code=500)
-
-    questions = questions_collection.find()
-    random_questions = random.sample(list(questions), 10)
-
-    user_session = None
-    if "username" in session:
-        user_session = users_collection.find_one({"username": session["username"]})
-
+    questions = list(questions_collection.find())
+    random_questions = random.sample(questions, min(len(questions), 10))
+    user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
     return render_template("questions/index.html", questions=random_questions, user=user_session)
 
 @app.route("/registrazione", methods=["GET", "POST"])
@@ -113,9 +105,19 @@ def ask_question():
         body = request.form.get("body")
 
         if not title or not body:
-            return render_template("questions/ask.html", error="Il titolo e la descrizione sono obbligatori.")
+            return jsonify({'success': False, 'error': "Il titolo e la descrizione sono obbligatori."})
 
-        owner_user_id = session["username"] if "username" in session else "NA"
+        # Recupera l'ID dell'utente loggato, se presente
+        username = session.get("username")
+        if username:
+            user = users_collection.find_one({"username": username})
+            if user:
+                owner_user_id = user["_id"]
+            else:
+                owner_user_id = "NA"
+        else:
+            owner_user_id = "NA"
+
         question_id = generate_unique_question_id()
 
         question = {
@@ -136,12 +138,22 @@ def ask_question():
 def add_comment():
     '''Permette agli utenti di aggiungere un commento a una domanda.'''
     comment_body = request.form.get("comment_body")
-    question_id = request.form.get("question_id")
+    question_id = int(request.form.get("question_id"))
 
     if not comment_body:
-        return redirect(url_for("show_home"))
+        return jsonify({'success': False, 'error': "Il commento non può essere vuoto."})
 
-    owner_user_id = session.get("username", "NA")
+    # Recupera l'ID dell'utente loggato, se presente
+    username = session.get("username")
+    if username:
+        user = users_collection.find_one({"username": username})
+        if user:
+            owner_user_id = user["_id"]
+        else:
+            owner_user_id = "NA"
+    else:
+        owner_user_id = "NA"
+
     answer_id = generate_unique_answer_id()
 
     comment = {
@@ -154,14 +166,12 @@ def add_comment():
     }
 
     answers_collection.insert_one(comment)
-    flash("Il commento è stato inserito in modo corretto!", "success")
-    return redirect(url_for("show_home"))
+    return jsonify({'success': True})
 
 def search_questions(query):
     '''Esegue una ricerca nel database delle domande.'''
-    collection = mydb.questions  # Usa la connessione globale
-    results = collection.find({'Title': {'$regex': query, '$options': 'i'}})
-    return list(results)  # Assicurati che i risultati siano restituiti come lista
+    results = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}})
+    return list(results)
 
 @app.route('/search', methods=['POST'])
 def search():
@@ -188,6 +198,15 @@ def show_user_questions():
 def show_user_answers():
     '''Visualizza le risposte dell'utente.'''
     return "Visualizzazione delle risposte dell'utente"
+
+@app.route('/get_answer_count/<int:question_id>', methods=['GET'])
+def get_answer_count(question_id):
+    '''Ritorna il numero di risposte per una domanda.'''
+    try:
+        answer_count = answers_collection.count_documents({"QuestionId": question_id})
+        return jsonify({'answer_count': answer_count})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 def generate_unique_id():
     '''Genera un ID utente unico.'''

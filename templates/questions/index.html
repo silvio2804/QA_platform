@@ -19,6 +19,25 @@
             font-size: 1.5em;
             line-height: 1;
         }
+        .comment-form textarea {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .comment-form button {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        .comment-form button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -64,33 +83,17 @@
                                 <span>{{ question.Score }}</span>
                             {% endif %}
                         </div>
-                        <span>3 risposte</span>
+                        <span id="answer-count-{{ question.questionID }}">0 risposte</span>
                         <span>data creazione: {{ question.CreationDate }}</span>
                     </div>
-                    <div class="comments-section">
-                        <h3>Commenti</h3>
-                        {% for comment in question.comments %}
-                        <div class="comment">
-                            <p><strong>{{ comment.OwnerUserId }}:</strong> {{ comment.Body }}</p>
-                            <div class="meta-info">
-                                <span>ID: {{ comment.answerID }}</span>
-                                <div class="vote-buttons">
-                                    {% if user %}
-                                        <button onclick="voteComment('{{ comment.answerID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
-                                        <span id="comment-score-{{ comment.answerID }}">{{ comment.Score }}</span>
-                                        <button onclick="voteComment('{{ comment.answerID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
-                                    {% else %}
-                                        <span>{{ comment.Score }}</span>
-                                    {% endif %}
-                                </div>
-                                <span>data creazione: {{ comment.CreationDate }}</span>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <form method="POST" action="{{ url_for('add_comment') }}">
-                            <input type="hidden" name="question_id" value="{{ question.questionID }}">
-                            <textarea name="comment_body" placeholder="Aggiungi un commento..." required></textarea>
-                            <button type="submit">Commenta</button>
+
+                    <!-- Modulo per il commento -->
+                    <div class="comment-form">
+                        <form id="comment-form" method="POST">
+                            <input type="hidden" name="question_id" value="{{ question.Id }}">
+                            <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento..."></textarea>
+                            <button type="submit">Aggiungi Commento</button>
+                            <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
                         </form>
                     </div>
                 </article>
@@ -103,6 +106,42 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-    <script src="script.js"></script>
+    <script>
+document.addEventListener("DOMContentLoaded", function() {
+    // Seleziona il modulo e l'elemento per il messaggio
+    const form = document.getElementById('comment-form');
+    const messageElement = document.getElementById('comment-message');
+
+    // Gestore per l'invio del modulo
+    form.addEventListener('submit', function(event) {
+        event.preventDefault(); // Previeni il comportamento di invio predefinito
+
+        // Crea un oggetto FormData per inviare i dati del modulo
+        const formData = new FormData(form);
+
+        // Invia una richiesta AJAX
+        fetch('{{ url_for('add_comment') }}', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                messageElement.textContent = "Il commento è stato inserito correttamente!";
+                messageElement.style.color = "green";
+                form.reset(); // Pulisce il modulo
+            } else {
+                messageElement.textContent = "Errore: " + data.error;
+                messageElement.style.color = "red";
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            messageElement.textContent = "Errore di rete!";
+            messageElement.style.color = "red";
+        });
+    });
+});
+</script>
 </body>
 </html>
