@@ -89,8 +89,8 @@
                                 <span>{{ question.Score }}</span>
                             {% endif %}
                         </div>
-                        <span id="answer-count-{{ question.questionID }}">0 risposte</span>
-                        <span>data creazione: {{ question.CreationDate }}</span>
+                        <span> Risposte: {{ answer_counter }}</span> <br>
+                        <span>Data creazione: {{ question.CreationDate }}</span>
                     </div>
 
                     <!-- Modulo per il commento -->
@@ -100,9 +100,10 @@
                              {% for answer in question.answers %}
                             <br>
                                  <div class="comment">
-                                     <h3> Autore: </h3> <br>
-                                    <p>{{answer.Body | safe }}</p>
-                                </div>
+                                     <!--<h3> Autore: {{ answer_users[loop.index0] if not None else 'Anonimo'}} </h3> <br> loop.index è una variabile di jinja e rappresenta l'indice del loop -->
+                                    <h3>Autore: {{answer_users[loop.index0] or 'Anonimo' }}<h3>
+                                     <p>{{answer.Body | safe }}</p>
+                                 </div>
                             <br>
                              {% endfor %}
 
@@ -128,7 +129,7 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-    <script>
+   <!--<script>
 document.addEventListener("DOMContentLoaded", function() {
     // Seleziona il modulo e l'elemento per il messaggio
     const form = document.getElementById('comment-form');
@@ -164,6 +165,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
-</script>
+</script> -->
 </body>
 </html>

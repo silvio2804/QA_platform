@@ -27,7 +27,7 @@ users_collection = db["users"]
 questions_collection = db["questions"]
 answers_collection = db["answers"]
 
-@app.route("/", methods=['GET'])
+@app.route("/", methods=['GET','POST'])
 def show_home():
     '''Visualizza la home page con un elenco di domande casuali.'''
     questions = list(questions_collection.find().limit(1))
@@ -49,8 +49,22 @@ def show_home():
             }
         }
     ]
+
     questions_with_comments = list(questions_collection.aggregate(pipeline))
-    print(questions_with_comments)
+
+    answers = questions_with_comments[0]['answers']
+    answer_counter = len(answers)
+
+    answer_user_ids = [id_ans['OwnerUserId'] for id_ans in answers]
+    print("stampa id utenti risposte")
+    print(answer_user_ids)
+    answers_user_data = list(users_collection.find(
+        {"id": {"$in": answer_user_ids}},  # Criteri di query
+        {"username": 1, "_id": 0}  # Proiezione: includi 'username', escludi '_id'
+    ))
+    answers_user_data.pop(0) #rimuovo il primo elemento che è vuoto
+
+    print(answers_user_data)
     # Visualizzazione dei risultati
     '''for question in questions_with_comments:
         print(f"Domanda: {question['Title']}")
@@ -59,7 +73,7 @@ def show_home():
         for comment in question.get('answers', []):
             print(f" - {comment['Body']}")
         print("\n")'''
-    return render_template("questions/index.html", questions=questions_with_comments, user=user_session)
+    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter, answer_users=answers_user_data)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
@@ -160,7 +174,7 @@ def ask_question():
 
     return render_template("questions/ask.html")
 
-@app.route("/add_comment", methods=["POST"])
+@app.route("/add_comment", methods=["GET, POST"])
 def add_comment():
     '''Permette agli utenti di aggiungere un commento a una domanda.'''
     comment_body = request.form.get("comment_body")
@@ -192,8 +206,9 @@ def add_comment():
     }
 
     answers_collection.insert_one(comment)
+
     #json_success = jsonify({'success': True})
-    return redirect(url_for("show_home",jsonify({'success': True}))) #sistemare
+    return redirect(url_for("show_home"))#sistemare
     """Fare redirect alla home, inserendo la domanda commentata al top della lista"""
 
 def search_questions(query):
