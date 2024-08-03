@@ -95,12 +95,28 @@
 
                     <!-- Modulo per il commento -->
                     <div class="comment-form">
+
                         <form id="comment-form" method="POST">
+                             {% for answer in question.answers %}
+                            <br>
+                                 <div class="comment">
+                                     <h3> Autore: </h3> <br>
+                                    <p>{{answer.Body | safe }}</p>
+                                </div>
+                            <br>
+                             {% endfor %}
+
                             <input type="hidden" name="question_id" value="{{ question.Id }}">
-                            <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento..."></textarea>
+
+                            <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento...">
+
+                            </textarea>
+
+
                             <button type="submit">Aggiungi Commento</button>
                             <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
                         </form>
+
                     </div>
                 </article>
                 {% endfor %}

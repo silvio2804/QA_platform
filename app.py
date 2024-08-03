@@ -30,10 +30,36 @@ answers_collection = db["answers"]
 @app.route("/", methods=['GET'])
 def show_home():
     '''Visualizza la home page con un elenco di domande casuali.'''
-    questions = list(questions_collection.find())
-    random_questions = random.sample(questions, min(len(questions), 10))
+    questions = list(questions_collection.find().limit(1))
+    random_question = random.sample(questions,1)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
-    return render_template("questions/index.html", questions=random_questions, user=user_session)
+    question_ids = [ids['Id'] for ids in random_question]
+    pipeline = [
+    {
+        "$match": {
+        "Id": {"$in": question_ids}
+        }
+    },
+        {
+            "$lookup": {
+                "from": "answers",  # Collezione di destinazione, quella che si vuole inserire nella principale
+                "localField": "Id",  # Campo della collezione `questions`
+                "foreignField": "QuestionId",  # Campo della collezione `answers`
+                "as": "answers"  # Si aggiungono le answers come oggetto embedded nel documento question
+            }
+        }
+    ]
+    questions_with_comments = list(questions_collection.aggregate(pipeline))
+    print(questions_with_comments)
+    # Visualizzazione dei risultati
+    '''for question in questions_with_comments:
+        print(f"Domanda: {question['Title']}")
+        print(f"Descrizione: {question['Body']}")
+        print("Commenti:")
+        for comment in question.get('answers', []):
+            print(f" - {comment['Body']}")
+        print("\n")'''
+    return render_template("questions/index.html", questions=questions_with_comments, user=user_session)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
@@ -166,7 +192,9 @@ def add_comment():
     }
 
     answers_collection.insert_one(comment)
-    return jsonify({'success': True})
+    #json_success = jsonify({'success': True})
+    return redirect(url_for("show_home",jsonify({'success': True}))) #sistemare
+    """Fare redirect alla home, inserendo la domanda commentata al top della lista"""
 
 def search_questions(query):
     '''Esegue una ricerca nel database delle domande.'''
