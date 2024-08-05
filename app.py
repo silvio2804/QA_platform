@@ -157,7 +157,7 @@ def ask_question():
         if username:
             user = users_collection.find_one({"username": username})
             if user:
-                owner_user_id = user["_id"]
+                owner_user_id = user["id"]
             else:
                 owner_user_id = "NA"
         else:
@@ -331,7 +331,7 @@ def generate_unique_id():
     '''Genera un ID utente unico.'''
     while True:
         user_id = random.randint(10000, 99999)
-        if not users_collection.find_one({"_id": user_id}):
+        if not users_collection.find_one({"id": user_id}):
             return user_id
 
 def generate_unique_question_id():
@@ -345,7 +345,7 @@ def generate_unique_answer_id():
     '''Genera un ID risposta unico.'''
     while True:
         answer_id = random.randint(10000, 99999)
-        if not answers_collection.find_one({"answerID": answer_id}):
+        if not answers_collection.find_one({"Id": answer_id}):
             return answer_id
 
 if __name__ == "__main__":
