@@ -96,23 +96,22 @@
                     <!-- Modulo per il commento -->
                     <div class="comment-form">
 
-                        <form id="comment-form" method="POST">
+                        <form id="comment-form" method="POST" action="{{ url_for('add_comment') }}">
                              {% for answer in question.answers %}
                             <br>
                                  <div class="comment">
                                      <!--<h3> Autore: {{ answer_users[loop.index0] if not None else 'Anonimo'}} </h3> <br> loop.index è una variabile di jinja e rappresenta l'indice del loop -->
-                                    <h3>Autore: {{answer_users[loop.index0] or 'Anonimo' }}<h3>
+                                    <h3>Autore: {{answer_users[loop.index0] or 'Anonimo' }}<h3> <!-- loop.index è una variabile di jinja e rappresenta l'indice del loop -->
                                      <p>{{answer.Body | safe }}</p>
                                  </div>
                             <br>
                              {% endfor %}
 
-                            <input type="hidden" name="question_id" value="{{ question.Id }}">
+                            <input type="hidden" name="question_id" value={{ question.Id }}>
 
                             <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento...">
 
                             </textarea>
-
 
                             <button type="submit">Aggiungi Commento</button>
                             <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
@@ -129,11 +128,13 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-   <!--<script>
+    <!--
+   <script>
 document.addEventListener("DOMContentLoaded", function() {
-    // Seleziona il modulo e l'elemento per il messaggio
+    // Seleziona il modulo, l'elemento per il messaggio e il contenitore dei commenti
     const form = document.getElementById('comment-form');
     const messageElement = document.getElementById('comment-message');
+    const commentsContainer = document.getElementById('comment-form');
 
     // Gestore per l'invio del modulo
     form.addEventListener('submit', function(event) {
@@ -152,6 +153,26 @@ document.addEventListener("DOMContentLoaded", function() {
             if (data.success) {
                 messageElement.textContent = "Il commento è stato inserito correttamente!";
                 messageElement.style.color = "green";
+
+                // Crea un nuovo elemento per il commento
+                const newComment = document.createElement('div');
+                newComment.className = 'comment';
+
+                // Crea l'elemento <h3> per l'autore
+                const commentAuthor = document.createElement('h3');
+                commentAuthor.textContent = `Autore: ${data.username || 'Anonimo'}`;
+
+                // Crea l'elemento <p> per il corpo del commento
+                const commentBody = document.createElement('p');
+                commentBody.innerHTML = data.comment; // Assumendo che il commento possa contenere HTML sicuro
+
+                // Aggiungi l'autore e il contenuto al nuovo commento
+                newComment.appendChild(commentAuthor);
+                newComment.appendChild(commentBody);
+
+                // Aggiungi il nuovo commento al contenitore dei commenti
+                commentsContainer.appendChild(newComment);
+
                 form.reset(); // Pulisce il modulo
             } else {
                 messageElement.textContent = "Errore: " + data.error;

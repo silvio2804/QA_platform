@@ -42,7 +42,7 @@ def show_home():
     },
         {
             "$lookup": {
-                "from": "answers",  # Collezione di destinazione, quella che si vuole inserire nella principale
+                "from": "answers",  # Collezione di destinazione
                 "localField": "Id",  # Campo della collezione `questions`
                 "foreignField": "QuestionId",  # Campo della collezione `answers`
                 "as": "answers"  # Si aggiungono le answers come oggetto embedded nel documento question
@@ -52,19 +52,24 @@ def show_home():
 
     questions_with_comments = list(questions_collection.aggregate(pipeline))
 
-    answers = questions_with_comments[0]['answers']
-    answer_counter = len(answers)
+    answers = questions_with_comments[0]['answers'] # Prelevo le risposte
+    answer_counter = len(answers) # Contatore risposte
 
-    answer_user_ids = [id_ans['OwnerUserId'] for id_ans in answers]
+    answer_user_ids = [id_ans['OwnerUserId'] for id_ans in answers] #Prelevo tutti gli id degli utenti che hanno risposto
     print("stampa id utenti risposte")
     print(answer_user_ids)
-    answers_user_data = list(users_collection.find(
+
+    answers_cursor = list(users_collection.find(  # Prelevo gli utenti che hanno risposto alle domande
         {"id": {"$in": answer_user_ids}},  # Criteri di query
         {"username": 1, "_id": 0}  # Proiezione: includi 'username', escludi '_id'
     ))
-    answers_user_data.pop(0) #rimuovo il primo elemento che è vuoto
+    for i in answers_cursor:
+        print(i)
+    #answers_cursor.pop(0)
 
-    print(answers_user_data)
+    usernames_response = [doc['username'] for doc in answers_cursor]
+
+    print(usernames_response)
     # Visualizzazione dei risultati
     '''for question in questions_with_comments:
         print(f"Domanda: {question['Title']}")
@@ -73,7 +78,7 @@ def show_home():
         for comment in question.get('answers', []):
             print(f" - {comment['Body']}")
         print("\n")'''
-    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter, answer_users=answers_user_data)
+    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter, answer_users=usernames_response)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
@@ -108,7 +113,7 @@ def register():
 
         try:
             users_collection.insert_one({
-                "_id": user_id,
+                "id": user_id,
                 "username": username,
                 "email": email,
                 "password": hashed_password,
@@ -174,7 +179,7 @@ def ask_question():
 
     return render_template("questions/ask.html")
 
-@app.route("/add_comment", methods=["GET, POST"])
+@app.route("/add_comment", methods=["POST"])
 def add_comment():
     '''Permette agli utenti di aggiungere un commento a una domanda.'''
     comment_body = request.form.get("comment_body")
@@ -188,7 +193,7 @@ def add_comment():
     if username:
         user = users_collection.find_one({"username": username})
         if user:
-            owner_user_id = user["_id"]
+            owner_user_id = user["id"]
         else:
             owner_user_id = "NA"
     else:
@@ -197,7 +202,7 @@ def add_comment():
     answer_id = generate_unique_answer_id()
 
     comment = {
-        "answerID": answer_id,
+        "Id": answer_id,
         "OwnerUserId": owner_user_id,
         "CreationDate": datetime.now().strftime("%d/%m/%Y - %H:%M:%S"),
         "QuestionId": question_id,
@@ -205,11 +210,12 @@ def add_comment():
         "Body": comment_body
     }
 
-    answers_collection.insert_one(comment)
+    answers_collection.insert_one(comment) #
 
-    #json_success = jsonify({'success': True})
-    return redirect(url_for("show_home"))#sistemare
+    return redirect(url_for("show_home"))
     """Fare redirect alla home, inserendo la domanda commentata al top della lista"""
+    # flash("Il commento è stato inserito in modo corretto!", "success")
+    # return jsonify({'success': True})
 
 def search_questions(query):
     '''Esegue una ricerca nel database delle domande.'''
