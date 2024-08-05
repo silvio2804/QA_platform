@@ -56,7 +56,6 @@
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
-
                     {% if user %}
                         <li>Benvenuto {{user.username}}</li>
                     {% endif %}
@@ -69,7 +68,7 @@
         <div class="container">
             <section class="search-bar">
                 <form method="POST" action="{{ url_for('search') }}">
-                    <input type="text" name="query" placeholder="Cerca domande...">
+                    <input type="text" name="query" placeholder="Cerca domande..." required>
                     <button type="submit">Cerca</button>
                 </form>
             </section>
@@ -81,15 +80,11 @@
                     <div class="meta-info">
                         <span>{{ question.OwnerUserId }}</span>
                         <div class="vote-buttons">
-                            {% if user %}
-                                <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
-                                <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
-                            {% else %}
-                                <span>{{ question.Score }}</span>
-                            {% endif %}
+                            <button data-question-id="{{ question.Id }}" data-vote-type="up">&#x25B2;</button>
+                            <span id="score-{{ question.Id }}">{{ question.Score }}</span>
+                            <button data-question-id="{{ question.Id }}" data-vote-type="down">&#x25BC;</button>
                         </div>
-                        <span id="answer-count-{{ question.questionID }}">0 risposte</span>
+                        <span id="answer-count-{{ question.Id }}">0 risposte</span>
                         <span>data creazione: {{ question.CreationDate }}</span>
                     </div>
 
@@ -112,42 +107,78 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
+
     <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Seleziona il modulo e l'elemento per il messaggio
-    const form = document.getElementById('comment-form');
-    const messageElement = document.getElementById('comment-message');
+    document.addEventListener("DOMContentLoaded", function() {
+        // Gestore per l'invio del modulo di commento
+        const form = document.getElementById('comment-form');
+        const messageElement = document.getElementById('comment-message');
 
-    // Gestore per l'invio del modulo
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // Previeni il comportamento di invio predefinito
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
 
-        // Crea un oggetto FormData per inviare i dati del modulo
-        const formData = new FormData(form);
+            const formData = new FormData(form);
 
-        // Invia una richiesta AJAX
-        fetch('{{ url_for('add_comment') }}', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                messageElement.textContent = "Il commento è stato inserito correttamente!";
-                messageElement.style.color = "green";
-                form.reset(); // Pulisce il modulo
-            } else {
-                messageElement.textContent = "Errore: " + data.error;
+            fetch('{{ url_for('add_comment') }}', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    messageElement.textContent = "Il commento è stato inserito correttamente!";
+                    messageElement.style.color = "green";
+                    form.reset();
+                } else {
+                    messageElement.textContent = "Errore: " + data.error;
+                    messageElement.style.color = "red";
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                messageElement.textContent = "Errore di rete!";
                 messageElement.style.color = "red";
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            messageElement.textContent = "Errore di rete!";
-            messageElement.style.color = "red";
+            });
+        });
+
+        // Gestore per i voti
+        const voteButtons = document.querySelectorAll(".vote-buttons button");
+
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const questionId = this.getAttribute('data-question-id');
+                const voteType = this.getAttribute('data-vote-type');
+
+                if (sessionStorage.getItem(`voted-${questionId}`)) {
+                    alert("Hai già votato su questa domanda.");
+                    return;
+                }
+
+                fetch('{{ url_for('vote_question') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'question_id': questionId,
+                        'vote_type': voteType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`score-${questionId}`).textContent = data.new_score;
+                        sessionStorage.setItem(`voted-${questionId}`, voteType);
+                    } else {
+                        alert('Errore: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore di rete:', error);
+                });
+            });
         });
     });
-});
-</script>
+    </script>
 </body>
 </html>

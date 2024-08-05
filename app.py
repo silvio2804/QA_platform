@@ -68,7 +68,7 @@ def register():
 
         try:
             users_collection.insert_one({
-                "_id": user_id,
+                "id": user_id,
                 "username": username,
                 "email": email,
                 "password": hashed_password,
@@ -138,7 +138,7 @@ def ask_question():
 def add_comment():
     '''Permette agli utenti di aggiungere un commento a una domanda.'''
     comment_body = request.form.get("comment_body")
-    question_id = int(request.form.get("question_id"))
+    question_id = request.form.get("question_id")
 
     if not comment_body:
         return jsonify({'success': False, 'error': "Il commento non può essere vuoto."})
@@ -173,12 +173,82 @@ def search_questions(query):
     results = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}})
     return list(results)
 
+
 @app.route('/search', methods=['POST'])
 def search():
     '''Gestisce la ricerca delle domande.'''
-    query = request.form.get('query')
+    query = request.form.get('query').strip()  # Rimuove gli spazi bianchi
+    if not query:  # Verifica se la query è vuota
+        return render_template('questions/search_results.html', questions=[], query=query,
+                               error="Inserisci una query per cercare.")
+
     questions = search_questions(query)
-    return render_template('questions/search_results.html', questions=questions, query=query)
+
+    # Recupera l'utente loggato, se presente
+    user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
+
+    return render_template('questions/search_results.html', questions=questions, query=query, user=user_session)
+
+@app.route('/vote_question', methods=['POST'])
+def vote_question():
+    '''Gestisce il voto per una domanda.'''
+    question_id = request.form.get('question_id')
+    vote_type = request.form.get('vote_type')
+    username = session.get('username')
+    #user_id = session.get('id')
+    #user_id = session.get('user_session')
+    user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
+    user_id = user_session['id']
+
+    print(question_id)
+    print(vote_type)
+    print(username)
+    print(user_id)
+
+    if not username:
+        return jsonify({'success': False, 'error': 'Bisogna essere loggati per effettuare modifiche allo score.'})
+    if not vote_type:
+        return jsonify({'success': False, 'error': 'Tipo di voto obbligatorio.'})
+    if not question_id:
+        return jsonify({'success': False, 'error': 'ID della domanda obbligatorio.'})
+
+    if vote_type not in ['up', 'down']:
+        return jsonify({'success': False, 'error': 'Tipo di voto non valido.'})
+
+    question = questions_collection.find_one({"Id": int(question_id)})
+    if not question:
+        return jsonify({'success': False, 'error': 'Domanda non trovata.'})
+
+    # Verifica se l'utente sta cercando di votare la propria domanda
+    if question['OwnerUserId'] == user_id:
+        return jsonify({'success': False, 'error': 'Non puoi votare la tua domanda.'})
+
+    print(username)
+
+
+
+    # Memorizza i voti dell'utente in sessione
+    if 'voted_questions' not in session:
+        session['voted_questions'] = []
+
+    # Verifica se l'utente ha già votato questa domanda
+    if question_id in session['voted_questions']:
+        return jsonify({'success': False, 'error': 'Hai già votato su questa domanda.'})
+
+    current_score = question['Score']
+    new_score = current_score + (1 if vote_type == 'up' else -1)
+
+    result = questions_collection.update_one(
+        {"Id": int(question_id)},
+        {"$set": {"Score": new_score}}
+    )
+
+    if result.modified_count == 1:
+        session['voted_questions'].append(question_id)
+        return jsonify({'success': True, 'new_score': new_score})
+    else:
+        return jsonify({'success': False, 'error': 'Impossibile aggiornare il voto.'})
+
 
 @app.route("/logout")
 def logout():
@@ -218,14 +288,14 @@ def generate_unique_id():
 def generate_unique_question_id():
     '''Genera un ID domanda unico.'''
     while True:
-        question_id = random.randint(100000, 999999)
-        if not questions_collection.find_one({"questionID": question_id}):
+        question_id = random.randint(10000, 99999)
+        if not questions_collection.find_one({"Id": question_id}):  # Corretto il campo da 'questionID' a 'Id'
             return question_id
 
 def generate_unique_answer_id():
     '''Genera un ID risposta unico.'''
     while True:
-        answer_id = random.randint(1000000, 9999999)
+        answer_id = random.randint(10000, 99999)
         if not answers_collection.find_one({"answerID": answer_id}):
             return answer_id
 

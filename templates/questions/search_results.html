@@ -19,6 +19,25 @@
             font-size: 1.5em;
             line-height: 1;
         }
+        .comment-form textarea {
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        .comment-form button {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+        .comment-form button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -49,31 +68,37 @@
                 </form>
             </section>
             <section class="questions-list">
-                {% if questions %}
-                    {% for question in questions %}
-                    <article class="question">
-                        <h2><a href="#">{{ question.Title }}</a></h2>
-                        <p>{{ question.Body | safe }}</p>
-                        <div class="meta-info">
-                            <span>{{ question.OwnerUserId }}</span>
-                            <div class="vote-buttons">
-                                {% if user %}
-                                    <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
-                                    <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                    <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
-                                {% else %}
-                                    <span>{{ question.Score }}</span>
-                                {% endif %}
-                            </div>
-                            <span>3 risposte</span>
-                            <span>data creazione: {{ question.CreationDate }}</span>
-                        </div>
-                    </article>
-                    {% endfor %}
-                {% else %}
-                    <p>Nessuna domanda trovata per la ricerca "{{ query }}".</p>
-                {% endif %}
-            </section>
+    {% if questions %}
+        {% for question in questions %}
+        <article class="question">
+            <h2><a href="#">{{ question.Title }}</a></h2>
+            <p>{{ question.Body | safe }}</p>
+            <div class="meta-info">
+                <span>{{ question.OwnerUserId }}</span>
+                <div class="vote-buttons">
+                    <button data-question-id="{{ question.Id }}" data-vote-type="up">&#x25B2;</button>
+                    <span id="score-{{ question.Id }}">{{ question.Score }}</span>
+                    <button data-question-id="{{ question.Id }}" data-vote-type="down">&#x25BC;</button>
+                </div>
+                <span id="answer-count-{{ question.Id }}">0 risposte</span>
+                <span>data creazione: {{ question.CreationDate }}</span>
+            </div>
+
+            <!-- Modulo per il commento -->
+            <div class="comment-form">
+                <form id="comment-form-{{ question.Id }}" method="POST">
+                    <input type="hidden" name="question_id" value="{{ question.Id }}">
+                    <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento..."></textarea>
+                    <button type="submit">Aggiungi Commento</button>
+                    <div id="comment-message-{{ question.Id }}"></div> <!-- Per visualizzare il messaggio di conferma -->
+                </form>
+            </div>
+        </article>
+        {% endfor %}
+    {% else %}
+        <p>Nessuna domanda trovata per la ricerca "{{ query }}".</p>
+    {% endif %}
+</section>
         </div>
     </main>
 
@@ -83,6 +108,80 @@
         </div>
     </footer>
 
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Gestore per l'invio dei moduli di commento
+        const commentForms = document.querySelectorAll('.comment-form form');
+
+        commentForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+                const questionId = form.querySelector('input[name="question_id"]').value;
+                const messageElement = document.getElementById(`comment-message-${questionId}`);
+
+                fetch('{{ url_for('add_comment') }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageElement.textContent = "Il commento è stato inserito correttamente!";
+                        messageElement.style.color = "green";
+                        form.reset();
+                    } else {
+                        messageElement.textContent = "Errore: " + data.error;
+                        messageElement.style.color = "red";
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    messageElement.textContent = "Errore di rete!";
+                    messageElement.style.color = "red";
+                });
+            });
+        });
+
+        // Gestore per i voti
+        const voteButtons = document.querySelectorAll(".vote-buttons button");
+
+        voteButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const questionId = this.getAttribute('data-question-id');
+                const voteType = this.getAttribute('data-vote-type');
+
+                if (localStorage.getItem(`voted-${questionId}`)) {
+                    alert("Hai già votato su questa domanda.");
+                    return;
+                }
+
+                fetch('{{ url_for('vote_question') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: new URLSearchParams({
+                        'question_id': questionId,
+                        'vote_type': voteType
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById(`score-${questionId}`).textContent = data.new_score;
+                        localStorage.setItem(`voted-${questionId}`, voteType);
+                    } else {
+                        alert('Errore: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore di rete:', error);
+                });
+            });
+        });
+    });
+    </script>
 </body>
 </html>

@@ -58,15 +58,33 @@
             color: red;
             margin-bottom: 10px;
         }
+
+        .success-message {
+            color: green;
+            margin-bottom: 10px;
+        }
+
+        .home-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .home-button a {
+            text-decoration: none;
+            color: #007bff;
+            font-weight: bold;
+        }
+
+        .home-button a:hover {
+            color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Chiedi una Domanda</h2>
-        {% if error %}
-            <p class="error-message">{{ error }}</p>
-        {% endif %}
-        <form method="POST" action="{{ url_for('ask_question') }}">
+        <div id="question-message"></div> <!-- Per visualizzare il messaggio di conferma -->
+        <form id="question-form" method="POST">
             <div class="form-group">
                 <label for="title">Titolo:</label>
                 <input type="text" id="title" name="title" required>
@@ -79,6 +97,43 @@
                 <input type="submit" value="Invia Domanda">
             </div>
         </form>
+        <div class="home-button">
+            <a href="{{ url_for('show_home') }}">Torna alla Home</a>
+        </div>
     </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const form = document.getElementById('question-form');
+            const messageElement = document.getElementById('question-message');
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(form);
+
+                fetch('{{ url_for('ask_question') }}', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        messageElement.textContent = "La domanda è stata inserita correttamente!";
+                        messageElement.className = "success-message";
+                        form.reset();
+                    } else {
+                        messageElement.textContent = "Errore: " + data.error;
+                        messageElement.className = "error-message";
+                    }
+                })
+                .catch(error => {
+                    console.error('Errore:', error);
+                    messageElement.textContent = "Errore di rete!";
+                    messageElement.className = "error-message";
+                });
+            });
+        });
+    </script>
 </body>
 </html>
