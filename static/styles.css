@@ -51,17 +51,19 @@ header nav ul li a {
     margin: 20px 0;
 }
 
+
 .search-bar input[type="text"] {
     width: 80%;
     padding: 10px;
     font-size: 1rem;
+    border-radius: 10px;
 }
 
 .search-bar button {
     padding: 10px 20px;
     background: #333;
     color: #fff;
-    border: none;
+    border-radius: 10px;
     cursor: pointer;
 }
 
@@ -70,6 +72,7 @@ header nav ul li a {
     margin: 20px 0;
     padding: 20px;
     border: 1px solid #ccc;
+    border-radius: 10px;
 }
 
 .questions-list .question h2 a {
@@ -161,4 +164,44 @@ nav ul.navbar li a {
 
 nav ul.navbar li a:hover {
     background: #575757;
+}
+
+textarea[name="comment_body"] {
+    width: 100%; /* Larghezza al 100% del contenitore padre */
+    max-width: 600px; /* Larghezza massima per evitare di allargare troppo */
+    min-width: 300px; /* Larghezza minima per evitare di restringere troppo */
+    box-sizing: border-box; /* Includi padding e border nella larghezza totale */
+    resize: none; /* Disabilita il ridimensionamento manuale, se desiderato */
+}
+/* Stile per il contenitore dei commenti */
+#comments-container {
+    margin-top: 20px;
+}
+
+/* Stile per ogni commento */
+.comment {
+    margin-bottom: 10px; /* Spazio tra i commenti */
+    padding: 10px; /* Spazio interno */
+    border: 1px solid #ddd; /* Bordo attorno a ogni commento */
+    border-radius: 5px; /* Angoli arrotondati */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Leggera ombreggiatura */
+    background-color: #f9f9f9; /* Colore di sfondo leggero */
+    width: 50%;
+}
+
+/* Stile per l'autore del commento */
+.comment-author {
+    margin: 0;
+    font-size: 1.1em; /* Dimensione del font leggermente più grande */
+    font-weight: bold; /* Testo in grassetto */
+}
+
+/* Stile per lo username */
+.comment-author span {
+    display: inline-block; /* Permette di applicare padding e bordo */
+    padding: 3px 8px; /* Spazio interno */
+    border: 1px solid #007bff; /* Bordo colorato attorno allo username */
+    border-radius: 5px; /* Angoli arrotondati */
+    background-color: #e7f3ff; /* Sfondo chiaro */
+    color: #007bff; /* Colore del testo */
 }

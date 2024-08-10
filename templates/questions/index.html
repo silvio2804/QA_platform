@@ -100,19 +100,16 @@
                              {% for answer in question.answers %}
                             <br>
                                  <div class="comment">
-                                     <!--<h3> Autore: {{ answer_users[loop.index0] if not None else 'Anonimo'}} </h3> <br> loop.index è una variabile di jinja e rappresenta l'indice del loop -->
-                                    <h3>Autore: {{answer_users[loop.index0] or 'Anonimo' }}<h3> <!-- loop.index è una variabile di jinja e rappresenta l'indice del loop -->
-                                     <p>{{answer.Body | safe }}</p>
+                                    <h3 class="comment-author">Autore: <span>{{ answer.username }}</span></h3>
+                                    <p>{{answer.Body | safe }}</p>
                                  </div>
                             <br>
                              {% endfor %}
 
                             <input type="hidden" name="question_id" value={{ question.Id }}>
 
-                            <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento...">
-
-                            </textarea>
-
+                            <textarea name="comment_body" rows="2" placeholder="Aggiungi un commento..."> </textarea>
+                            </br>
                             <button type="submit">Aggiungi Commento</button>
                             <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
                         </form>

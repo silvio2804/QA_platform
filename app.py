@@ -51,11 +51,35 @@ def show_home():
     ]
 
     questions_with_comments = list(questions_collection.aggregate(pipeline))
+    print(questions_with_comments)
+    # Estrai gli ID degli utenti dai commenti
 
+    for question in questions_with_comments:
+        user_ids = [comment['OwnerUserId'] for comment in question.get('answers', [])] #prendi id di chi ha fatto il commento
+        print(f"user_ids: {user_ids}")
+
+        users = list(db['users'].find({"Id": {"$in": user_ids}}, {"Id":1, "username": 1, "_id": 0}))#prendi gli username di chi ha commentato
+        print(f"users: {list(users)}")
+
+        #aggiungili all'oggetto questio_with_answers
+
+        user_map = {user['Id']: user['username'] for user in users}
+
+        print(f"user_map: {user_map}")
+
+        for comment in question.get('answers', []):
+            comment['username'] = user_map.get(comment['OwnerUserId'], 'NA')
+
+        # Ora il documento `question` contiene i commenti con gli username
+    print(f"question_with_comments: {questions_with_comments}")
+
+    answer_counter = 3
+    """
     answers = questions_with_comments[0]['answers'] # Prelevo le risposte
     answer_counter = len(answers) # Contatore risposte
 
     answer_user_ids = [id_ans['OwnerUserId'] for id_ans in answers] #Prelevo tutti gli id degli utenti che hanno risposto
+
     print("stampa id utenti risposte")
     print(answer_user_ids)
 
@@ -78,7 +102,8 @@ def show_home():
         for comment in question.get('answers', []):
             print(f" - {comment['Body']}")
         print("\n")'''
-    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter, answer_users=usernames_response)
+        """
+    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
@@ -113,7 +138,7 @@ def register():
 
         try:
             users_collection.insert_one({
-                "id": user_id,
+                "Id": user_id,
                 "username": username,
                 "email": email,
                 "password": hashed_password,
@@ -157,7 +182,7 @@ def ask_question():
         if username:
             user = users_collection.find_one({"username": username})
             if user:
-                owner_user_id = user["id"]
+                owner_user_id = user["Id"]
             else:
                 owner_user_id = "NA"
         else:
@@ -181,6 +206,7 @@ def ask_question():
 
 @app.route("/add_comment", methods=["POST"])
 def add_comment():
+    print("add_comment\n")
     '''Permette agli utenti di aggiungere un commento a una domanda.'''
     comment_body = request.form.get("comment_body")
     question_id = request.form.get("question_id")
@@ -190,10 +216,11 @@ def add_comment():
 
     # Recupera l'ID dell'utente loggato, se presente
     username = session.get("username")
+    print(username)
     if username:
         user = users_collection.find_one({"username": username})
         if user:
-            owner_user_id = user["id"]
+            owner_user_id = user["Id"]
         else:
             owner_user_id = "NA"
     else:
@@ -205,12 +232,12 @@ def add_comment():
         "Id": answer_id,
         "OwnerUserId": owner_user_id,
         "CreationDate": datetime.now().strftime("%d/%m/%Y - %H:%M:%S"),
-        "QuestionId": question_id,
+        "QuestionId": int(question_id),
         "Score": 0,
         "Body": comment_body
     }
-
-    answers_collection.insert_one(comment) #
+    print(comment)
+    answers_collection.insert_one(comment)
 
     return redirect(url_for("show_home"))
     """Fare redirect alla home, inserendo la domanda commentata al top della lista"""
@@ -247,7 +274,7 @@ def vote_question():
     #user_id = session.get('id')
     #user_id = session.get('user_session')
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
-    user_id = user_session['id']
+    user_id = user_session['Id']
 
     print(question_id)
     print(vote_type)
@@ -309,7 +336,8 @@ def logout():
 def show_user_questions():
     '''Visualizza le domande dell'utente.'''
     user_session = users_collection.find_one({"username": session.get("username")})
-    id = int(user_session["_id"])
+    id = int(user_session["Id"])
+    print(id)
     questions = list(questions_collection.find({"OwnerUserId": id}))
     return render_template("questions/my_questions.html", user=user_session, questions=questions)
 
@@ -331,7 +359,7 @@ def generate_unique_id():
     '''Genera un ID utente unico.'''
     while True:
         user_id = random.randint(10000, 99999)
-        if not users_collection.find_one({"id": user_id}):
+        if not users_collection.find_one({"Id": user_id}):
             return user_id
 
 def generate_unique_question_id():
