@@ -30,8 +30,8 @@ answers_collection = db["answers"]
 @app.route("/", methods=['GET','POST'])
 def show_home():
     '''Visualizza la home page con un elenco di domande casuali.'''
-    questions = list(questions_collection.find().limit(1))
-    random_question = random.sample(questions,1)
+    questions = list(questions_collection.find().limit(10))
+    random_question = random.sample(questions,10)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
     question_ids = [ids['Id'] for ids in random_question]
     pipeline = [
@@ -166,7 +166,7 @@ def ask_question():
         question_id = generate_unique_question_id()
 
         question = {
-            "questionID": question_id,
+            "Id": question_id,
             "Title": title,
             "Body": body,
             "OwnerUserId": owner_user_id,
@@ -232,6 +232,53 @@ def search():
                                error="Inserisci una query per cercare.")
 
     questions = search_questions(query)
+
+    question_ids = [ids['Id'] for ids in questions]
+    pipeline = [
+        {
+            "$match": {
+                "Id": {"$in": question_ids}
+            }
+        },
+        {
+            "$lookup": {
+                "from": "answers",  # Collezione di destinazione
+                "localField": "Id",  # Campo della collezione `questions`
+                "foreignField": "QuestionId",  # Campo della collezione `answers`
+                "as": "answers"  # Si aggiungono le answers come oggetto embedded nel documento question
+            }
+        }
+    ]
+
+    questions_with_comments = list(questions_collection.aggregate(pipeline))
+
+    answers = questions_with_comments[0]['answers']  # Prelevo le risposte
+    answer_counter = len(answers)  # Contatore risposte
+
+    answer_user_ids = [id_ans['OwnerUserId'] for id_ans in
+                       answers]  # Prelevo tutti gli id degli utenti che hanno risposto
+    print("stampa id utenti risposte")
+    print(answer_user_ids)
+
+    answers_cursor = list(users_collection.find(  # Prelevo gli utenti che hanno risposto alle domande
+        {"id": {"$in": answer_user_ids}},  # Criteri di query
+        {"username": 1, "_id": 0}  # Proiezione: includi 'username', escludi '_id'
+    ))
+    for i in answers_cursor:
+        print(i)
+    # answers_cursor.pop(0)
+
+    usernames_response = [doc['username'] for doc in answers_cursor]
+
+    print(usernames_response)
+    # Visualizzazione dei risultati
+    '''for question in questions_with_comments:
+        print(f"Domanda: {question['Title']}")
+        print(f"Descrizione: {question['Body']}")
+        print("Commenti:")
+        for comment in question.get('answers', []):
+            print(f" - {comment['Body']}")
+        print("\n")'''
 
     # Recupera l'utente loggato, se presente
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
