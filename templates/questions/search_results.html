@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q&A Site</title>
+    <title>Risultati della Ricerca</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         .vote-buttons {
@@ -47,18 +47,12 @@
             <nav>
                 <ul>
                     <li><a href="{{ url_for('show_home') }}">Home</a></li>
-                    {% if user %}
-                    <li><a href="{{ url_for('show_user_questions') }}">Le mie domande</a></li>
-                    {% endif %}
+                    <li><a href="{{ url_for('show_user_questions') }}">Domande</a></li>
                     <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
                     {% if user %}
                         <li><a href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
-                    {% endif %}
-
-                    {% if user %}
-                        <li>Benvenuto {{user.username}}</li>
                     {% endif %}
                 </ul>
             </nav>
@@ -69,66 +63,43 @@
         <div class="container">
             <section class="search-bar">
                 <form method="POST" action="{{ url_for('search') }}">
-                    <input type="text" name="query" placeholder="Cerca domande...">
+                    <input type="text" name="query" value="{{ query }}" placeholder="Cerca domande...">
                     <button type="submit">Cerca</button>
                 </form>
             </section>
             <section class="questions-list">
-                {% for question in questions %}
-                <article class="question">
-                    <h2><a href="#">{{ question.Title }}</a></h2>
-                    <p>{{ question.Body | safe }}</p>
-                    <div class="meta-info">
-                        <span>{{ question.OwnerUserId }}</span>
-                        <div class="vote-buttons">
-                            {% if user %}
-                                <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
-                                <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
-                            {% else %}
-                                <span>{{ question.Score }}</span>
-                            {% endif %}
-                        </div>
-                        <span> Risposte: {{ answer_counter }}</span> <br>
-                        <span>Data creazione: {{ question.CreationDate }}</span>
-                    </div>
-
-                    <!-- Modulo per il commento -->
-                    <div class="comment-form">
-
-                        <form id="comment-form" method="POST" action="{{ url_for('add_comment') }}">
-                             {% for answer in question.answers %}
-                            <br>
-                                 <div class="comment">
-                                     <!--<h3> Autore: {{ answer_users[loop.index0] if not None else 'Anonimo'}} </h3> <br> loop.index è una variabile di jinja e rappresenta l'indice del loop -->
-                                    <h3>Autore: {{answer_users[loop.index0] or 'Anonimo' }}<h3> <!-- loop.index è una variabile di jinja e rappresenta l'indice del loop -->
-                                     <p>{{answer.Body | safe }}</p>
-                                 </div>
-                            <br>
-                             {% endfor %}
-
-                            <input type="hidden" name="question_id" value={{ question.Id }}>
-
-                            <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento...">
-
-                            </textarea>
-
-                            <button type="submit">Aggiungi Commento</button>
-                            <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
-                        </form>
-
-                    </div>
-                </article>
-                {% endfor %}
-            </section>
+    {% if questions %}
+        {% for question in questions %}
+        <article class="question">
+            <h2>
+                <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
+            </h2>
+            <p>{{ question.Body | safe }}</p>
+            <div class="meta-info">
+                <span>{{ question.OwnerUserId }}</span>
+                <div class="vote-buttons">
+                    <button data-question-id="{{ question.Id }}" data-vote-type="up">&#x25B2;</button>
+                    <span id="score-{{ question.Id }}">{{ question.Score }}</span>
+                    <button data-question-id="{{ question.Id }}" data-vote-type="down">&#x25BC;</button>
+                </div>
+               <!-- <span id="answer-count-{{ question.Id }}"> {{answercount}}</span>-->
+                <span>data creazione: {{ question.CreationDate }}</span>
+            </div>
+        </article>
+        {% endfor %}
+    {% else %}
+        <p>Nessuna domanda trovata per la ricerca "{{ query }}".</p>
+    {% endif %}
+</section>
         </div>
     </main>
+
     <footer>
         <div class="container">
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-
+<!--
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Gestore per l'invio dei moduli di commento
@@ -203,6 +174,6 @@
             });
         });
     });
-    </script>
+    </script> -->
 </body>
 </html>
