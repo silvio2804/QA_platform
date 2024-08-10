@@ -51,7 +51,9 @@
             <section class="questions-list">
                 {% for question in questions %}
                 <article class="question">
-                    <h2>{{ question.Title }}</h2>
+                    <h2>
+                        <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
+                    </h2>
                     <p>{{ question.Body | safe }}</p>
                     <div class="meta-info">
                         <span> Score: {{ question.Score }}</span> <br>

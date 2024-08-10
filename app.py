@@ -27,11 +27,58 @@ users_collection = db["users"]
 questions_collection = db["questions"]
 answers_collection = db["answers"]
 
+@app.route("/question/<question_id>", methods=['GET','POST'])
+def show_question(question_id):
+    print(question_id)
+    user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
+
+    pipeline = [
+        {
+            "$match": {
+                "Id": int(question_id)
+            }
+        },
+        {
+            "$lookup": {
+                "from": "answers",  # Collezione di destinazione
+                "localField": "Id",  # Campo della collezione `questions`
+                "foreignField": "QuestionId",  # Campo della collezione `answers`
+                "as": "answers"  # Si aggiungono le answers come oggetto embedded nel documento question
+            }
+        }
+    ]
+
+    questions_with_comments = list(questions_collection.aggregate(pipeline))
+    print(questions_with_comments)
+    # Estrai gli ID degli utenti dai commenti
+
+    for question in questions_with_comments:
+        user_ids = [comment['OwnerUserId'] for comment in
+                    question.get('answers', [])]  # prendi id di chi ha fatto il commento
+        print(f"user_ids: {user_ids}")
+
+        users = list(db['users'].find({"Id": {"$in": user_ids}},
+                                      {"Id": 1, "username": 1, "_id": 0}))  # prendi gli username di chi ha commentato
+        print(f"users: {list(users)}")
+
+        # aggiungili all'oggetto questio_with_answers
+
+        user_map = {user['Id']: user['username'] for user in users}
+
+        for comment in question.get('answers', []):
+            comment['username'] = user_map.get(comment['OwnerUserId'], 'NA')
+
+        # Ora il documento `question` contiene i commenti con gli username
+    print(f"question_with_comments: {questions_with_comments}")
+
+    answer_counter = len(questions_with_comments[0]['answers'])
+    return render_template("questions/show_question.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter)
+
 @app.route("/", methods=['GET','POST'])
 def show_home():
     '''Visualizza la home page con un elenco di domande casuali.'''
-    questions = list(questions_collection.find().limit(1))
-    random_question = random.sample(questions,1)
+    questions = list(questions_collection.find().limit(10))
+    random_question = random.sample(questions,10)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
     question_ids = [ids['Id'] for ids in random_question]
     pipeline = [
@@ -73,7 +120,7 @@ def show_home():
         # Ora il documento `question` contiene i commenti con gli username
     print(f"question_with_comments: {questions_with_comments}")
 
-    answer_counter = 3
+
     """
     answers = questions_with_comments[0]['answers'] # Prelevo le risposte
     answer_counter = len(answers) # Contatore risposte
@@ -103,7 +150,7 @@ def show_home():
             print(f" - {comment['Body']}")
         print("\n")'''
         """
-    return render_template("questions/index.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter)
+    return render_template("questions/index.html", questions=questions_with_comments, user=user_session)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
@@ -191,7 +238,7 @@ def ask_question():
         question_id = generate_unique_question_id()
 
         question = {
-            "questionID": question_id,
+            "Id": question_id,
             "Title": title,
             "Body": body,
             "OwnerUserId": owner_user_id,
@@ -200,7 +247,7 @@ def ask_question():
         }
 
         questions_collection.insert_one(question)
-        return redirect(url_for("show_home"))
+        return jsonify({'success': True})
 
     return render_template("questions/ask.html")
 
@@ -239,7 +286,7 @@ def add_comment():
     print(comment)
     answers_collection.insert_one(comment)
 
-    return redirect(url_for("show_home"))
+    return redirect(url_for("show_question",question_id=int(question_id)))
     """Fare redirect alla home, inserendo la domanda commentata al top della lista"""
     # flash("Il commento è stato inserito in modo corretto!", "success")
     # return jsonify({'success': True})
@@ -259,7 +306,7 @@ def search():
                                error="Inserisci una query per cercare.")
 
     questions = search_questions(query)
-
+    print(f"domande ricercate: {questions}")
     # Recupera l'utente loggato, se presente
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
 

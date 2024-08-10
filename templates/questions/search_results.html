@@ -71,7 +71,9 @@
     {% if questions %}
         {% for question in questions %}
         <article class="question">
-            <h2><a href="#">{{ question.Title }}</a></h2>
+            <h2>
+                <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
+            </h2>
             <p>{{ question.Body | safe }}</p>
             <div class="meta-info">
                 <span>{{ question.OwnerUserId }}</span>
@@ -80,18 +82,8 @@
                     <span id="score-{{ question.Id }}">{{ question.Score }}</span>
                     <button data-question-id="{{ question.Id }}" data-vote-type="down">&#x25BC;</button>
                 </div>
-                <span id="answer-count-{{ question.Id }}">0 risposte</span>
+               <!-- <span id="answer-count-{{ question.Id }}"> {{answercount}}</span>-->
                 <span>data creazione: {{ question.CreationDate }}</span>
-            </div>
-
-            <!-- Modulo per il commento -->
-            <div class="comment-form">
-                <form id="comment-form-{{ question.Id }}" method="POST">
-                    <input type="hidden" name="question_id" value="{{ question.Id }}">
-                    <textarea name="comment_body" rows="3" placeholder="Aggiungi un commento..."></textarea>
-                    <button type="submit">Aggiungi Commento</button>
-                    <div id="comment-message-{{ question.Id }}"></div> <!-- Per visualizzare il messaggio di conferma -->
-                </form>
             </div>
         </article>
         {% endfor %}
@@ -107,7 +99,7 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-
+<!--
     <script>
     document.addEventListener("DOMContentLoaded", function() {
         // Gestore per l'invio dei moduli di commento
@@ -182,6 +174,6 @@
             });
         });
     });
-    </script>
+    </script> -->
 </body>
 </html>
