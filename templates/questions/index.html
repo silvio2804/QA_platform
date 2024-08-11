@@ -39,15 +39,15 @@
             <section class="questions-list">
                 {% for question in questions %}
                 <article class="question">
-                    <span>Autore: {{ question.OwnerUserId }}</span>
+                    <span>Autore: {{ question.username }}</span>
                     <h2><a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a></h2>
                     <p>{{ question.Body | safe }}</p>
                     <div class="meta-info">
                         <div class="vote-buttons">
                             {% if user %}
-                                <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
+                                <button onclick="voteQuestion('{{ question.Id }}', 1)">&#x25B2;</button> <!-- Freccia su -->
                                 <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
+                                <button onclick="voteQuestion('{{ question.Id }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
                             {% else %}
                                 <span>{{ question.Score }}</span>
                             {% endif %}

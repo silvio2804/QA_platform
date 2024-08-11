@@ -82,46 +82,22 @@ def show_home():
     questions = list(questions_collection.find().limit(10))
     random_question = random.sample(questions,10)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
-    question_ids = [ids['Id'] for ids in random_question]
-    pipeline = [
-    {
-        "$match": {
-        "Id": {"$in": question_ids}
-        }
-    },
-        {
-            "$lookup": {
-                "from": "answers",  # Collezione di destinazione
-                "localField": "Id",  # Campo della collezione `questions`
-                "foreignField": "QuestionId",  # Campo della collezione `answers`
-                "as": "answers"  # Si aggiungono le answers come oggetto embedded nel documento question
-            }
-        }
-    ]
+    question_user_id = [ids['OwnerUserId'] for ids in random_question]
 
-    questions_with_comments = list(questions_collection.aggregate(pipeline))
-    #print(questions_with_comments)
     # Estrai gli ID degli utenti dai commenti
+    user_ids = [ids for ids in question_user_id]  # prendi id di chi ha fatto le domande
+    #print(f"user_ids: {user_ids}")
 
-    for question in questions_with_comments:
-        user_ids = [comment['OwnerUserId'] for comment in question.get('answers', [])] #prendi id di chi ha fatto il commento
-        #print(f"user_ids: {user_ids}")
+    for question in questions:
 
-        users = list(db['users'].find({"Id": {"$in": user_ids}}, {"Id":1, "username": 1, "_id": 0})) #prendi gli username di chi ha commentato
+        users = list(users_collection.find({"Id": {"$in": user_ids}}, {"Id":1, "username": 1, "_id": 0})) #prendi gli username di chi ha fatto la domanda
         #print(f"users: {list(users)}")
 
-        #aggiungi username all'oggetto question_with_answers
-
+        #aggiungi username alla domanda
         user_map = {user['Id']: user['username'] for user in users}
 
         #print(f"user_map: {user_map}")
-
-        for comment in question.get('answers', []):
-            comment['username'] = user_map.get(comment['OwnerUserId'], 'NA')
-
-        # Ora il documento `question` contiene i commenti con gli username
-    #print(f"question_with_comments: {questions_with_comments}")
-
+        question['username'] = user_map.get(question['OwnerUserId'], 'NA')
 
     """
     answers = questions_with_comments[0]['answers'] # Prelevo le risposte
@@ -152,7 +128,7 @@ def show_home():
             print(f" - {comment['Body']}")
         print("\n")'''
         """
-    return render_template("questions/index.html", questions=questions_with_comments, user=user_session)
+    return render_template("questions/index.html", questions=questions, user=user_session)
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
