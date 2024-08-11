@@ -30,6 +30,8 @@ answers_collection = db["answers"]
 @app.route("/question/<question_id>", methods=['GET','POST'])
 def show_question(question_id):
     print(question_id)
+    '''show single question with comments'''
+    #print(question_id)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
 
     pipeline = [
@@ -49,17 +51,17 @@ def show_question(question_id):
     ]
 
     questions_with_comments = list(questions_collection.aggregate(pipeline))
-    print(questions_with_comments)
+    #print(questions_with_comments)
     # Estrai gli ID degli utenti dai commenti
 
     for question in questions_with_comments:
         user_ids = [comment['OwnerUserId'] for comment in
                     question.get('answers', [])]  # prendi id di chi ha fatto il commento
-        print(f"user_ids: {user_ids}")
+        #print(f"user_ids: {user_ids}")
 
         users = list(db['users'].find({"Id": {"$in": user_ids}},
                                       {"Id": 1, "username": 1, "_id": 0}))  # prendi gli username di chi ha commentato
-        print(f"users: {list(users)}")
+        #print(f"users: {list(users)}")
 
         # aggiungili all'oggetto questio_with_answers
 
@@ -69,14 +71,14 @@ def show_question(question_id):
             comment['username'] = user_map.get(comment['OwnerUserId'], 'NA')
 
         # Ora il documento `question` contiene i commenti con gli username
-    print(f"question_with_comments: {questions_with_comments}")
+    #print(f"question_with_comments: {questions_with_comments}")
 
     answer_counter = len(questions_with_comments[0]['answers'])
     return render_template("questions/show_question.html", questions=questions_with_comments, user=user_session, answer_counter=answer_counter)
 
 @app.route("/", methods=['GET','POST'])
 def show_home():
-    '''Visualizza la home page con un elenco di domande casuali.'''
+    '''Show random questions in home page'''
     questions = list(questions_collection.find().limit(10))
     random_question = random.sample(questions,10)
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
@@ -98,27 +100,27 @@ def show_home():
     ]
 
     questions_with_comments = list(questions_collection.aggregate(pipeline))
-    print(questions_with_comments)
+    #print(questions_with_comments)
     # Estrai gli ID degli utenti dai commenti
 
     for question in questions_with_comments:
         user_ids = [comment['OwnerUserId'] for comment in question.get('answers', [])] #prendi id di chi ha fatto il commento
-        print(f"user_ids: {user_ids}")
+        #print(f"user_ids: {user_ids}")
 
-        users = list(db['users'].find({"Id": {"$in": user_ids}}, {"Id":1, "username": 1, "_id": 0}))#prendi gli username di chi ha commentato
-        print(f"users: {list(users)}")
+        users = list(db['users'].find({"Id": {"$in": user_ids}}, {"Id":1, "username": 1, "_id": 0})) #prendi gli username di chi ha commentato
+        #print(f"users: {list(users)}")
 
-        #aggiungili all'oggetto questio_with_answers
+        #aggiungi username all'oggetto question_with_answers
 
         user_map = {user['Id']: user['username'] for user in users}
 
-        print(f"user_map: {user_map}")
+        #print(f"user_map: {user_map}")
 
         for comment in question.get('answers', []):
             comment['username'] = user_map.get(comment['OwnerUserId'], 'NA')
 
         # Ora il documento `question` contiene i commenti con gli username
-    print(f"question_with_comments: {questions_with_comments}")
+    #print(f"question_with_comments: {questions_with_comments}")
 
 
     """
@@ -154,7 +156,7 @@ def show_home():
 
 @app.route("/registrazione", methods=["GET", "POST"])
 def register():
-    '''Gestisce la registrazione di un nuovo utente.'''
+    ''' Registration users'''
     if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
@@ -199,7 +201,7 @@ def register():
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    '''Gestisce il login degli utenti.'''
+    '''Login users'''
     if request.method == "POST":
         email = request.form.get("email")
         password = request.form.get("password")
@@ -216,7 +218,8 @@ def login():
 
 @app.route("/ask", methods=["GET", "POST"])
 def ask_question():
-    '''Permette agli utenti di fare una domanda.'''
+    '''Allow users to ask a question'''
+
     if request.method == "POST":
         title = request.form.get("title")
         body = request.form.get("body")
@@ -253,8 +256,8 @@ def ask_question():
 
 @app.route("/add_comment", methods=["POST"])
 def add_comment():
-    print("add_comment\n")
-    '''Permette agli utenti di aggiungere un commento a una domanda.'''
+    '''Allow user to add a comment'''
+
     comment_body = request.form.get("comment_body")
     question_id = request.form.get("question_id")
 
@@ -263,7 +266,7 @@ def add_comment():
 
     # Recupera l'ID dell'utente loggato, se presente
     username = session.get("username")
-    print(username)
+    #print(username)
     if username:
         user = users_collection.find_one({"username": username})
         if user:
@@ -283,7 +286,7 @@ def add_comment():
         "Score": 0,
         "Body": comment_body
     }
-    print(comment)
+    #print(comment)
     answers_collection.insert_one(comment)
 
     return redirect(url_for("show_question",question_id=int(question_id)))
@@ -292,21 +295,20 @@ def add_comment():
     # return jsonify({'success': True})
 
 def search_questions(query):
-    '''Esegue una ricerca nel database delle domande.'''
     results = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}})
     return list(results)
 
 
 @app.route('/search', methods=['POST'])
 def search():
-    '''Gestisce la ricerca delle domande.'''
+    '''Allow user to search a question by title'''
     query = request.form.get('query').strip()  # Rimuove gli spazi bianchi
     if not query:  # Verifica se la query è vuota
         return render_template('questions/search_results.html', questions=[], query=query,
                                error="Inserisci una query per cercare.")
 
     questions = search_questions(query)
-    print(f"domande ricercate: {questions}")
+    # print(f"domande ricercate: {questions}")
     # Recupera l'utente loggato, se presente
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
 
@@ -314,19 +316,12 @@ def search():
 
 @app.route('/vote_question', methods=['POST'])
 def vote_question():
-    '''Gestisce il voto per una domanda.'''
+    '''Allow to add a score to a question'''
     question_id = request.form.get('question_id')
     vote_type = request.form.get('vote_type')
     username = session.get('username')
-    #user_id = session.get('id')
-    #user_id = session.get('user_session')
     user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
     user_id = user_session['Id']
-
-    print(question_id)
-    print(vote_type)
-    print(username)
-    print(user_id)
 
     if not username:
         return jsonify({'success': False, 'error': 'Bisogna essere loggati per effettuare modifiche allo score.'})
@@ -345,10 +340,6 @@ def vote_question():
     # Verifica se l'utente sta cercando di votare la propria domanda
     if question['OwnerUserId'] == user_id:
         return jsonify({'success': False, 'error': 'Non puoi votare la tua domanda.'})
-
-    print(username)
-
-
 
     # Memorizza i voti dell'utente in sessione
     if 'voted_questions' not in session:
@@ -375,49 +366,88 @@ def vote_question():
 
 @app.route("/logout")
 def logout():
-    '''Gestisce il logout degli utenti.'''
+    ''' Logout users'''
+
     session.pop("username", None)
     return redirect(url_for("login"))
 
-@app.route("/myQuestions", methods=['GET'])
+@app.route("/myQuestions", methods=['GET','POST'])
 def show_user_questions():
-    '''Visualizza le domande dell'utente.'''
+    '''Allow show user questions'''
+
     user_session = users_collection.find_one({"username": session.get("username")})
     id = int(user_session["Id"])
-    print(id)
     questions = list(questions_collection.find({"OwnerUserId": id}))
+    print(questions)
     return render_template("questions/my_questions.html", user=user_session, questions=questions)
 
-@app.route("/myAnswers", methods=['GET'])
-def show_user_answers():
-    '''Visualizza le risposte dell'utente.'''
-    return "Visualizzazione delle risposte dell'utente"
-
-@app.route('/get_answer_count/<int:question_id>', methods=['GET'])
-def get_answer_count(question_id):
-    '''Ritorna il numero di risposte per una domanda.'''
+@app.route('/delete_question/<int:question_id>', methods=['POST'])
+def delete_question(question_id):
     try:
-        answer_count = answers_collection.count_documents({"QuestionId": question_id})
-        return jsonify({'answer_count': answer_count})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        # Converti l'ID della domanda in un ObjectId
 
+        print(question_id)
+        result = questions_collection.delete_one({'Id': question_id})
+        answers_collection.delete_many({'QuestionId': question_id})
+        if result.deleted_count == 1:
+            flash('Domanda eliminata con successo!', 'success')
+        else:
+            flash('Domanda non trovata.', 'danger')
+    except Exception as e:
+        flash(f'Errore durante l\'eliminazione della domanda: {str(e)}', 'danger')
+
+    return redirect(url_for('show_user_questions'))
+
+
+@app.route('/update_question/<question_id>', methods=['POST'])
+def update_question(question_id):
+
+    title = request.form.get('title')
+    body = request.form.get('body')
+
+    print(f"{title, body}")
+
+    try:
+        result = questions_collection.update_one(
+            {'Id': int(question_id)},
+            {'$set': {'Title': title, 'Body': body}}
+        )
+        print(result)
+        if result.matched_count == 1:
+            print("sium")
+            flash('Domanda aggiornata con successo!', 'success')
+        else:
+            print("nooo")
+            flash('Domanda non trovata.', 'danger')
+    except Exception as e:
+        flash(f'Errore durante l\'aggiornamento della domanda: {str(e)}', 'danger')
+
+    return redirect(url_for('show_user_questions'))
+
+
+# Altre rotte e logiche dell'app
+
+if __name__ == '__main__':
+    app.run(debug=True)
 def generate_unique_id():
-    '''Genera un ID utente unico.'''
+    '''Generate a random  user Id'''
+
     while True:
         user_id = random.randint(10000, 99999)
         if not users_collection.find_one({"Id": user_id}):
             return user_id
 
 def generate_unique_question_id():
-    '''Genera un ID domanda unico.'''
+    '''Generate a random Id'''
+
     while True:
         question_id = random.randint(10000, 99999)
         if not questions_collection.find_one({"Id": question_id}):  # Corretto il campo da 'questionID' a 'Id'
             return question_id
 
 def generate_unique_answer_id():
-    '''Genera un ID risposta unico.'''
+    '''Generate a random Id'''
+
     while True:
         answer_id = random.randint(10000, 99999)
         if not answers_collection.find_one({"Id": answer_id}):

@@ -5,21 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Site</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .vote-buttons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-right: 10px;
-        }
-        .vote-buttons button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.5em;
-            line-height: 1;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -27,11 +12,11 @@
             <h1>Q&A Site</h1>
             <nav>
                 <ul>
-                        <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
-                        <li><a href="{{ url_for('show_home') }}">Home</a></li>
+                    <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
+                    <li><a href="{{ url_for('show_home') }}">Home</a></li>
                     {% if user %}
                         <li><a href="{{ url_for('logout') }}">Logout</a></li>
-                        <li>{{user.username}}</li>
+                        <li>{{ user.username }}</li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
@@ -51,16 +36,20 @@
             <section class="questions-list">
                 {% for question in questions %}
                 <article class="question">
-                    <h2>
-                        <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
-                    </h2>
-                    <p>{{ question.Body | safe }}</p>
+                    <form id="update-form-{{ question.Id }}" action="{{ url_for('update_question', question_id=question.Id) }}" method="POST">
+                        <input type="text" name="title" value="{{ question.Title }}" class="editable-title" required>
+                        <textarea name="body" class="editable-body" rows="4" required>{{ question.Body }}</textarea>
+                        <button type="button" class="save-btn" onclick="submitForm('{{ question.Id }}')" style="display: none;">Salva</button>
+                    </form>
                     <div class="meta-info">
-                        <span> Score: {{ question.Score }}</span> <br>
+                        <span>Score: {{ question.Score }}</span> <br>
                         <span>Data creazione: {{ question.CreationDate }}</span>
-
-                        <!-- inserire anche lo score???!-->
                     </div>
+                    <!-- Pulsante di eliminazione -->
+                    <br>
+                    <form action="{{ url_for('delete_question', question_id=question.Id) }}" method="POST" class="delete-form">
+                        <button type="submit" class="delete-btn">Elimina</button>
+                    </form>
                 </article>
                 {% endfor %}
             </section>
@@ -71,6 +60,22 @@
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const editables = document.querySelectorAll('.editable-title, .editable-body');
+
+            editables.forEach(function(editable) {
+                editable.addEventListener('input', function() {
+                    const form = editable.closest('form');
+                    const saveBtn = form.querySelector('.save-btn');
+                    saveBtn.style.display = 'inline-block';
+                });
+            });
+        });
+
+        function submitForm(questionId) {
+            document.getElementById('update-form-' + questionId).submit();
+        }
+    </script>
 </body>
 </html>
