@@ -27,6 +27,10 @@ users_collection = db["users"]
 questions_collection = db["questions"]
 answers_collection = db["answers"]
 
+# Index
+questions_collection.create_index({"Title": 'text'})
+
+
 @app.route("/question/<question_id>", methods=['GET','POST'])
 def show_question(question_id):
     print(question_id)
@@ -271,8 +275,11 @@ def add_comment():
     # return jsonify({'success': True})
 
 def search_questions(query):
-    results = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}})
-    return list(results)
+    #questions_collection.createIndex({"Title": 1})
+    #query2 = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}}).explain()
+    query2 = questions_collection.find({"$text": {"$search": query}}).explain() #query con indice -> piu veloce
+    print(query2)
+    return list(query2)
 
 
 @app.route('/search', methods=['POST'])
