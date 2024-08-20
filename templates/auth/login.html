@@ -1,66 +1,103 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
-<style>
-    .container {
-    max-width: 300px;
-    margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ccc;
-}
-
-h1 {
-    text-align: center;
-}
-
-.form-group {
-    margin-bottom: 10px;
-}
-
-label {
-    display: block;
-    font-weight: bold;
-}
-
-input[type="text"],
-input[type="password"] {
-    width: 100%;
-    padding: 5px;
-    font-size: 16px;
-}
-
-button[type="submit"] {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #333;
-    color: white;
-    border: none;
-    cursor: pointer;
-}
-
-</style>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-wrapper {
+            display: flex;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 800px;
+            max-width: 90%;
+        }
+        .login-image {
+            width: 40%;
+            background: url('{{ url_for('static', filename='login-image.jpg') }}') no-repeat center center;
+            background-size: cover;
+        }
+        .container {
+            padding: 30px;
+            width: 60%;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555;
+        }
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button[type="submit"],
+        .register-button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        button[type="submit"] {
+            background-color: #28a745;
+        }
+        .register-button {
+            background-color: #007bff;
+        }
+        button[type="submit"]:hover,
+        .register-button:hover {
+            opacity: 0.9;
+        }
+    </style>
 </head>
 <body>
-{% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
-    <div class="container">
-        <h1>Login</h1>
-        <form id="login-form" method="post" action="{{ url_for('login') }}">
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="text" id="email" name="email" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit">Login</button>
-        </form>
+    <div class="login-wrapper">
+        <div class="login-image"></div>
+        <div class="container">
+            <h1>Login</h1>
+            {% if error %}
+                <p style="color: red;">{{ error }}</p>
+            {% endif %}
+            <form id="login-form" method="post" action="{{ url_for('login') }}">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="text" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Login</button> <br>
+                <button class="register-button" type="button" onclick="window.location.href='{{ url_for('register') }}'">Registrati</button>
+            </form>
+        </div>
     </div>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>

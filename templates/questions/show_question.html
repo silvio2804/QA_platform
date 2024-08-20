@@ -5,40 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Site</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .vote-buttons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-right: 10px;
-        }
-        .vote-buttons button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.5em;
-            line-height: 1;
-        }
-        .comment-form textarea {
-            width: 100%;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .comment-form button {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            background-color: #007bff;
-            color: #fff;
-            cursor: pointer;
-        }
-        .comment-form button:hover {
-            background-color: #0056b3;
-        }
-    </style>
+
 </head>
 <body>
     <header>
@@ -79,12 +46,13 @@
                     <h2>{{ question.Title }}</h2>
                     <p>{{ question.Body | safe }}</p>
                     <div class="meta-info">
-                        <span>{{ question.OwnerUserId }}</span>
+                        <!--<span>{{ question.OwnerUserId }}</span>-->
+
                         <div class="vote-buttons">
                             {% if user %}
-                                <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
+                                <button onclick="voteQuestion('{{ question.Id }}', 1)">&#x25B2;</button> <!-- Freccia su -->
                                 <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
+                                <button onclick="voteQuestion('{{ question.Id }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
                             {% else %}
                                 <span>{{ question.Score }}</span>
                             {% endif %}
@@ -101,7 +69,7 @@
                             <br>
                                  <div class="comment">
                                     <h3 class="comment-author">Autore: <span>{{ answer.username }}</span></h3>
-                                    <p>{{answer.Body | safe }}</p>
+                                    <p><br>{{answer.Body | safe }}</p>
                                  </div>
                             <br>
                              {% endfor %}
@@ -109,7 +77,7 @@
 
                             <textarea name="comment_body" rows="2" placeholder="Aggiungi un commento..."> </textarea>
                             </br>
-                            <button type="submit">Aggiungi Commento</button>
+                            <button class="comment-btn" type="submit">Aggiungi Commento</button>
                             <div id="comment-message"></div> <!-- Per visualizzare il messaggio di conferma -->
                         </form>
 

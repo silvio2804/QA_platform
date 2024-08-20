@@ -5,40 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Q&A Site</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-    <style>
-        .vote-buttons {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-right: 10px;
-        }
-        .vote-buttons button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 1.5em;
-            line-height: 1;
-        }
-        .comment-form textarea {
-            width: 100%;
-            margin: 10px 0;
-            padding: 10px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        .comment-form button {
-            display: inline-block;
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            background-color: #007bff;
-            color: #fff;
-            cursor: pointer;
-        }
-        .comment-form button:hover {
-            background-color: #0056b3;
-        }
-    </style>
 </head>
 <body>
     <header>
@@ -48,17 +14,14 @@
                 <ul>
                     <li><a href="{{ url_for('show_home') }}">Home</a></li>
                     {% if user %}
-                    <li><a href="{{ url_for('show_user_questions') }}">Le mie domande</a></li>
+                        <li><a href="{{ url_for('show_user_questions') }}">Le mie domande</a></li>
                     {% endif %}
                     <li><a href="{{ url_for('ask_question') }}">Chiedi una Domanda</a></li>
                     {% if user %}
                         <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                        <li>Benvenuto, {{user.username}}</li>
                     {% else %}
                         <li><a href="{{ url_for('login') }}">Login</a></li>
-                    {% endif %}
-
-                    {% if user %}
-                        <li>Benvenuto {{user.username}}</li>
                     {% endif %}
                 </ul>
             </nav>
@@ -76,25 +39,19 @@
             <section class="questions-list">
                 {% for question in questions %}
                 <article class="question">
-                    <span> {{ question.OwnerUserId }}</span>
-                     <h2>
-                         <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
-                     </h2>
-
+                    <span>Autore: {{ question.username }}</span>
+                    <h2><a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a></h2>
                     <p>{{ question.Body | safe }}</p>
-                    <br>
                     <div class="meta-info">
-
                         <div class="vote-buttons">
                             {% if user %}
-                                <button onclick="voteQuestion('{{ question.questionID }}', 1)">&#x25B2;</button> <!-- Freccia su -->
+                                <button onclick="voteQuestion('{{ question.Id }}', 1)">&#x25B2;</button> <!-- Freccia su -->
                                 <span id="score-{{ question.questionID }}">{{ question.Score }}</span>
-                                <button onclick="voteQuestion('{{ question.questionID }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
+                                <button onclick="voteQuestion('{{ question.Id }}', -1)">&#x25BC;</button> <!-- Freccia giù -->
                             {% else %}
                                 <span>{{ question.Score }}</span>
                             {% endif %}
                         </div>
-                        <!--<span> Risposte: {{ answer_counter }}</span> <br> -->
                         <span>Data creazione: {{ question.CreationDate }}</span>
                     </div>
                 </article>
@@ -102,68 +59,11 @@
             </section>
         </div>
     </main>
+
     <footer>
         <div class="container">
             <p>&copy; 2024 Q&A Site. Tutti i diritti riservati.</p>
         </div>
     </footer>
-   <script>
-document.addEventListener("DOMContentLoaded", function() {
-    // Seleziona il modulo, l'elemento per il messaggio e il contenitore dei commenti
-    const form = document.getElementById('comment-form');
-    const messageElement = document.getElementById('comment-message');
-    const commentsContainer = document.getElementById('comment-form');
-
-    // Gestore per l'invio del modulo
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // Previeni il comportamento di invio predefinito
-
-        // Crea un oggetto FormData per inviare i dati del modulo
-        const formData = new FormData(form);
-
-        // Invia una richiesta AJAX
-        fetch('{{ url_for('add_comment') }}', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                messageElement.textContent = "Il commento è stato inserito correttamente!";
-                messageElement.style.color = "green";
-
-                // Crea un nuovo elemento per il commento
-                const newComment = document.createElement('div');
-                newComment.className = 'comment';
-
-                // Crea l'elemento <h3> per l'autore
-                const commentAuthor = document.createElement('h3');
-                commentAuthor.textContent = `Autore: ${data.username || 'Anonimo'}`;
-
-                // Crea l'elemento <p> per il corpo del commento
-                const commentBody = document.createElement('p');
-                commentBody.innerHTML = data.comment; // Assumendo che il commento possa contenere HTML sicuro
-
-                // Aggiungi l'autore e il contenuto al nuovo commento
-                newComment.appendChild(commentAuthor);
-                newComment.appendChild(commentBody);
-
-                // Aggiungi il nuovo commento al contenitore dei commenti
-                commentsContainer.appendChild(newComment);
-
-                form.reset(); // Pulisce il modulo
-            } else {
-                messageElement.textContent = "Errore: " + data.error;
-                messageElement.style.color = "red";
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            messageElement.textContent = "Errore di rete!";
-            messageElement.style.color = "red";
-        });
-    });
-});
-</script>
 </body>
 </html>
