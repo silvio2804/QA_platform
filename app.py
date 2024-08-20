@@ -299,52 +299,19 @@ def search():
 
 @app.route('/vote_question', methods=['POST'])
 def vote_question():
-    '''Allow to add a score to a question'''
-    question_id = request.form.get('question_id')
-    vote_type = request.form.get('vote_type')
-    username = session.get('username')
-    user_session = users_collection.find_one({"username": session.get("username")}) if "username" in session else None
-    user_id = user_session['Id']
+    data = request.get_json()
+    question_id = data['question_id']
+    vote_type = data['vote_type']
 
-    if not username:
-        return jsonify({'success': False, 'error': 'Bisogna essere loggati per effettuare modifiche allo score.'})
-    if not vote_type:
-        return jsonify({'success': False, 'error': 'Tipo di voto obbligatorio.'})
-    if not question_id:
-        return jsonify({'success': False, 'error': 'ID della domanda obbligatorio.'})
+    for question in questions:
+        if question['Id'] == int(question_id):
+            if vote_type == 'up':
+                question['Score'] += 1
+            elif vote_type == 'down':
+                question['Score'] -= 1
+            return jsonify({'success': True, 'new_score': question['Score']})
 
-    if vote_type not in ['up', 'down']:
-        return jsonify({'success': False, 'error': 'Tipo di voto non valido.'})
-
-    question = questions_collection.find_one({"Id": int(question_id)})
-    if not question:
-        return jsonify({'success': False, 'error': 'Domanda non trovata.'})
-
-    # Verifica se l'utente sta cercando di votare la propria domanda
-    if question['OwnerUserId'] == user_id:
-        return jsonify({'success': False, 'error': 'Non puoi votare la tua domanda.'})
-
-    # Memorizza i voti dell'utente in sessione
-    if 'voted_questions' not in session:
-        session['voted_questions'] = []
-
-    # Verifica se l'utente ha già votato questa domanda
-    if question_id in session['voted_questions']:
-        return jsonify({'success': False, 'error': 'Hai già votato su questa domanda.'})
-
-    current_score = question['Score']
-    new_score = current_score + (1 if vote_type == 'up' else -1)
-
-    result = questions_collection.update_one(
-        {"Id": int(question_id)},
-        {"$set": {"Score": new_score}}
-    )
-
-    if result.modified_count == 1:
-        session['voted_questions'].append(question_id)
-        return jsonify({'success': True, 'new_score': new_score})
-    else:
-        return jsonify({'success': False, 'error': 'Impossibile aggiornare il voto.'})
+    return jsonify({'success': False, 'error': 'Question not found.'})
 
 
 @app.route("/logout")

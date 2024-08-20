@@ -41,16 +41,18 @@
                 <a href="{{ url_for('show_question', question_id=question.Id) }}">{{ question.Title }}</a>
             </h2>
             <p>{{ question.Body | safe }}</p>
-            <div class="meta-info">
-                <span>{{ question.OwnerUserId }}</span>
-                <div class="vote-buttons">
-                    <button data-question-id="{{ question.Id }}" data-vote-type="up">&#x25B2;</button>
-                    <span id="score-{{ question.Id }}">{{ question.Score }}</span>
-                    <button data-question-id="{{ question.Id }}" data-vote-type="down">&#x25BC;</button>
-                </div>
-               <!-- <span id="answer-count-{{ question.Id }}"> {{answercount}}</span>-->
-                <span>data creazione: {{ question.CreationDate }}</span>
-            </div>
+            <div class="question">
+    <div class="vote-buttons">
+        <button data-question-id="{{ question.Id }}" data-vote-type="1">&#x25B2;</button> <!-- Freccia su -->
+        <span id="score-{{ question.Id }}">{{ question.Score }}</span>
+        <button data-question-id="{{ question.Id }}" data-vote-type="-1">&#x25BC;</button> <!-- Freccia giù -->
+    </div>
+    <div class="question-content">
+        <h3>{{ question.Title }}</h3>
+        <p>{{ question.Description }}</p>
+    </div>
+</div>
+
         </article>
         {% endfor %}
     {% else %}
@@ -141,5 +143,39 @@
         });
     });
     </script> -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const buttons = document.querySelectorAll('.vote-buttons button');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', function () {
+            const questionId = this.dataset.questionId;
+            const voteType = parseInt(this.dataset.voteType);
+
+            // Recupera il punteggio attuale dal DOM
+            const scoreElement = document.getElementById(`score-${questionId}`);
+            let currentScore = parseInt(scoreElement.textContent);
+
+            // Recupera i voti salvati dal localStorage
+            const savedVotes = JSON.parse(localStorage.getItem('votes')) || {};
+
+            // Controlla se l'utente ha già votato per questa domanda
+            if (savedVotes[questionId] !== undefined) {
+                alert("Hai già votato questa domanda.");
+                return; // Ferma l'esecuzione se l'utente ha già votato
+            }
+
+            // Applica il nuovo voto
+            currentScore += voteType;
+            scoreElement.textContent = currentScore;
+
+            // Salva il nuovo voto in localStorage
+            savedVotes[questionId] = voteType;
+            localStorage.setItem('votes', JSON.stringify(savedVotes));
+        });
+    });
+});
+
+</script>
 </body>
 </html>
