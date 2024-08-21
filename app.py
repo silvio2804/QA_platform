@@ -277,8 +277,7 @@ def add_comment():
 def search_questions(query):
     #questions_collection.createIndex({"Title": 1})
     #query2 = questions_collection.find({'Title': {'$regex': query, '$options': 'i'}}).explain()
-    query2 = questions_collection.find({"$text": {"$search": query}}).explain() #query con indice -> piu veloce
-    print(query2)
+    query2 = questions_collection.find({"$text": {"$search": query}}) #query con indice -> piu veloce
     return list(query2)
 
 
