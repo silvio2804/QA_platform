@@ -9,4 +9,4 @@ Use pip freeze to install all dependencies
 https://www.kaggle.com/datasets/stackoverflow/rquestions?select=Answers.c
 
 # Presentation
-[Presentation]("Basi\dati\II.pdf" )
+[Presentation]("Badi\dati\II.pdf" )
